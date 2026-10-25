@@ -1,0 +1,10 @@
+/go/bin/
+/cache/
+/out/
+/dist/
+/ops/
+/samples/
+/site/
+/site-build/
+*.secret
+.env

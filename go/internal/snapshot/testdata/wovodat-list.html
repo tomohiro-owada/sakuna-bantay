@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en-US">
+ <meta name="description" content="WOVODAT - Volcanoes in the Philippines">
+  <meta name="keywords" content="philippines, volcano, volcanoes, phivolcs, taal, kanlaon, pinatubo, hibok-hibok, mayon, bulusan">
+	<meta name="author" content="DOST-PHIVOLCS">
+   <meta name="robots" content="index, follow">
+<head>
+<!-- page views -->
+<div class="pageviews">
+	<div class="notice-row">
+		<i class="fas fa-users"></i>
+		Visitors:
+			1508294	</div>
+
+	<div class="wrap-scroll">
+	       <span style="background-color:#41aae6;z-index:1">Alert Level Status:</span>
+		  <div id="scroll-text">
+		     <span class="tvo-scroll-level scroll-item">Taal - 1</span> <span class="kvo-scroll-level scroll-item">Kanlaon - 2</span> <span class="bvo-scroll-level scroll-item">Bulusan - 1</span> <span class="pvo-scroll-level scroll-item">Pinatubo - 0</span> <span class="mvo-scroll-level scroll-item" >Mayon - 2</span>		   
+		  </div>
+	</div>
+
+	<div class="notice-row" style="text-align:right">
+		<span> <a class="contact-number" href="tel:+632 8426-1468">(+632) 8426-1468 loc 311/312</a> <a class="email" href = "mailto: mail.vmepd@phivolcs.dost.gov.ph">mail.vmepd@phivolcs.dost.gov.ph</a> </span>
+	</div>
+</div>
+
+
+	<link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 <!-- FONTAWESOME CDN -->
+	 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <meta name="csrf-param" content="_csrf">
+    <meta name="csrf-token" content="WKA-omJcUhEDKQ7tlrdbSnkya9MZoj7br9o1zBMzoJwa3SZKcq9dHj5oboaJ-sgHobLs-BklSIVvGepa_v_c7w==">
+    <title>PHIVOLCS-LAVA: Show of Bulletin</title>
+    <link href="/assets/bbdc27ed/css/bootstrap.css" rel="stylesheet">
+<link href="/css/style.css" rel="stylesheet">
+<link href="/css/style_new_site.css" rel="stylesheet">
+<link href="/assets/520d4473/themes/smoothness/jquery-ui.css" rel="stylesheet">
+<style>
+label{margin-bottom:0px;font-weigth:bold}
+table tr td{font-size:15px !important;text-align:center}
+table tr th{text-align:center}
+#edate,#sdate{width:120px}
+
+h1{font-size:25px;padding:6px 0;}
+
+.column {
+  float: left;
+  width: 50%;
+  padding: 10px;
+  height: auton;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+@media screen and (max-width: 600px) {
+  .column {width: 100%;}
+}
+</style>
+<style>
+	#scroll-container {
+	border: 3px solid black;
+	border-radius: 5px;
+	overflow: hidden;
+	}
+
+	#scroll-text {
+	text-align: right;
+
+	/* animation properties */
+	-moz-transform: translateX(-100%);
+	-webkit-transform: translateX(-100%);
+	transform: translateX(-100%);
+	
+	-moz-animation: my-animation 30s linear infinite;
+	-webkit-animation: my-animation 30s linear infinite;
+	animation: my-animation 30s linear infinite;
+	}
+	/* for Firefox */
+	@-moz-keyframes my-animation {
+	from { -moz-transform: translateX(100%); }
+	to { -moz-transform: translateX(-100%); }
+	}
+
+	/* for Chrome */
+	@-webkit-keyframes my-animation {
+	from { -webkit-transform: translateX(100%); }
+	to { -webkit-transform: translateX(-100%); }
+	}
+
+	@keyframes my-animation {
+		from {
+			-moz-transform: translateX(100%);
+			-webkit-transform: translateX(100%);
+			transform: translateX(100%);
+		}
+		to {
+			-moz-transform: translateX(-100%);
+			-webkit-transform: translateX(-100%);
+			transform: translateX(-100%);
+		}
+	}
+	.colorMV{color:#eb5202 !important}
+	.colorKV{color:#de7e03}
+	.colorTV{color:#982803}
+
+	#chatbot-toggler {position: fixed;bottom: 20px;right: 20px;padding: 10px;border-radius: 10px;cursor: pointer;color: #fff;font-weight: bold;background-color: #0B05B8; font-size: 18px;}
+	#chatbot-popup {position: fixed;bottom: 80px;right: 20px;width: 350px;height: 400px;border: 1px solid #ccc;background: white;display: flex;flex-direction: column;border-radius: 10px !important;z-index:100}
+	#send-btn {padding: 10px 20px;background-color: #007bff;color: white;border: none;border-radius: 0 5px 5px 0;cursor: pointer;transition: background 0.3s ease;}
+	.chat-input {flex: 1;border: 1px solid #ccc;border-radius: 5px 0 0 5px;outline: none;width: 77% !important;height:38px;padding-left:5px;float:left}
+	#claims{max-width: 79.7% !important;float:left}
+	.hidden { display: none !important; }
+	.chat-body {flex: 1;padding: 10px;overflow-y: auto;}
+	.chat-box { display: flex;flex-direction: column;gap: 15px;}
+	.message {display: block; max-width: 75%;overflow-wrap:anywhere}
+	.chat-header{background-color: #0B05B8;color:#fff;border-radius:5px 5px 0px 0px}
+	.chat-header i.fas{font-size:15px;margin-right:5px;color:#fff}
+	.chat-footer{border-top:1px dashed #000}
+	.user { background-color: #007aff; color: #fff; align-self: flex-start;padding:5px;border-top-right-radius: 10px;}
+	.wait { background-color: #e5e5ea; color: #000; align-self: flex-end;padding:5px;border-top-right-radius: 10px;}
+	.bot {background-color: #e5e5ea; color: #000; align-self: flex-end;padding:5px;border-top-right-radius: 10px;}
+	.close-btn {cursor: pointer;font-size: 24px;font-weight: bold;color: #fff;width: 30px;float: right;}
+	.close-btn:hover {color: #ff0000;}
+	.premsg,#prev-chat{font-size:16px;text-align:center;border-bottom:1px dashed #ccc;}
+    
+	.dropup {
+		width: 79.7% /* Replace with your desired pixel size */
+		word-wrap: break-word; 
+		z-index:2
+	}
+	.dropup .dropdown-menu > li > a {
+		white-space: normal; /* Overrides Bootstrap's 'nowrap' */
+		word-wrap: break-word; /* Breaks long words if necessary */
+	}
+
+	.dropup .dropdown-menu > li.active > a,
+	.dropup  .dropdown-menu > li.active > a:hover,
+	.dropup  .dropdown-menu > li.active > a:focus {
+		background-color: #007bff !important; /* Your active color */
+		color: #ffffff !important;           /* Text color */
+	}
+	.dropup .dropdown-menu{width: 200px;overflow-x: auto;white-space: nowrap;max-height:320px}
+	.dropdown-label {display: block;overflow: hidden; }
+	.btn-default{max-width: 270px;width: 268px;height:37px;}
+	.btn-default:hover{color: #eee6e6;background-color: #007bff;}
+	.btn{border:1px solid #007bff;}
+	.btn-default:active:hover, .btn-default.active:hover, .open > .dropdown-toggle.btn-default:hover, .btn-default:active:focus, .btn-default.active:focus, .open > .dropdown-toggle.btn-default:focus, .btn-default:active.focus, .btn-default.active.focus, .open > .dropdown-toggle.btn-default.focus{color: #eee6e6;background-color: #007bff;}
+</style></head>
+<body>
+
+<div class="wrap">
+	<div id="header-wrap">
+    	<!--<div class="header-title"><h1>Philippine Institute of Volcanology and Seismology</h1></div>-->
+		<nav id="w0" class="navbar navbar-default"><div class="container"><div class="navbar-header"><button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#w0-collapse"><span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span></button></div><div id="w0-collapse" class="collapse navbar-collapse">
+		<ul id="w1" class="navbar-nav navbar-left nav">
+			<div class="menu-logo">
+				<a href="/"><img class="logo" src="./../images-new/2.png"></a>
+			</div>
+			<div class="logo-text">
+				<p><span style="color:#41AAE6;">V</span>olcano <span style="color:#41AAE6;">M</span>onitoring and <br>
+				<span style="color:#41AAE6;">E</span>ruption <span style="color:#41AAE6;">P</span>rediction <span style="color:#41AAE6;">D</span>ivision</p>
+		</div>
+
+			 
+			<li><a href="/user/login"  style="color: #41AAE6" data-method="post"><i class="fas fa-user"></i> Sign In</a></li>
+			<!-- <li class="dropdown"> -->
+				<!-- <a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-home"></i><i class="fa-solid fa-house-chimney"></i>Home <b class="caret"></b></a> -->
+					<!-- <ul id="w2" class="dropdown-menu"> -->
+						<li><a href="/" tabindex="-1"><i class="fas fa-home"></i><i class="fa-solid fa-house-chimney"></i> Home</a></li>
+					<!-- </ul> -->
+			<!-- </li> -->
+			<li><a href="/contact/form" tabindex="-1"><i class="fas fa-envelope"></i> Contact Us</a></li>
+			<li class="dropdown">
+				<a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-camera"></i>VOLCAN (<span style="color:red">Live</span>)<i class="fas fa-chevron-down"></i> </a>
+					<ul id="w2" class="dropdown-menu">
+						<li><a href="/monitor/instruments?volcano=kvo" tabindex="-1"><i class="fas fa-camera"></i>Kanlaon Volcano</a></li>
+						<li><a href="/monitor/instruments?volcano=mvo" tabindex="-1"><i class="fas fa-camera"></i>Mayon Volcano</a></li>
+						<li><a href="/monitor/instruments?volcano=bvo" tabindex="-1"><i class="fas fa-camera"></i>Bulusan Volcano</a></li>
+					</ul>
+			</li>
+			<li><a href="/monitor/volcano-network"><i class='fas fa-project-diagram'></i> Monitoring Network</a></li>
+			<li><a href="/bulletin/list-of-bulletin"><i class="fas fa-clipboard-list"></i> Volcano Status</a></li>
+			<li><a href="/eqplotted/located"><i class="fas fa-map-marker"></i> Volcanic Earthquake</a></li>
+			<li class="dropdown">
+				<a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-mountain"></i> Volcano <i class="fas fa-chevron-down"></i> </a>
+					<ul id="w2" class="dropdown-menu">
+						<li><a href="/volcano/ph-volcanoes" tabindex="-1"><i class="fas fa-mountain"></i>  Volcano Catalog</a></li>
+						<li><a href="/volcan/active" tabindex="-1"><i class="fas fa-mountain"></i>  Active Volcanoes</a></li>
+						<li><a href="/volcan/potential" tabindex="-1"><i class="fas fa-mountain"></i>  Potential Active Volcanoes</a></li>
+						<li><a href="/volcan/inactive" tabindex="-1"><i class="fas fa-mountain"></i>  InActive Volcanoes</a></li>
+						<li><a href="/volcan/erupt-history" tabindex="-1"><i class="fas fa-history"></i> Eruption History</a></li>
+						<li><a href="/volcan/raising-alert" tabindex="-1"><i class="fas fa-regular fa-bell"></i> Alert Level Bulletin/Advisory</a></li>
+						<li><a href="https://www.phivolcs.dost.gov.ph/volcano-alert-levels" tabindex="-1" target="_blank"><i class="fas fa-regular fa-bell"></i> Volcano Alert Levels</a></li>
+					</ul>
+			</li>
+			<li><a href="/data/download"><i class="fas fa-folder-open"></i> Monitoring Data</a></li>
+			<li class="dropdown">
+				<a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-chart-line"></i>Visual Data <i class="fas fa-chevron-down"></i> </a>
+					<ul id="w2" class="dropdown-menu">
+						<li><a href="/graph/plot" tabindex="-1"><i class="fas fa-chart-line"></i> Time-series</a></li>
+						<li><a href="/seismic/seismic-plot" tabindex="-1"><i class="fas fa-chart-line"></i>3D/2D  </a></li>
+					</ul>
+			</li>
+			
+			<!--<div class="nav-separator"></div>-->
+
+			<li><a href="/image/preview"><i class="fas fa-images"></i> Image Gallery</a></li>
+			
+			<div class="nav-separator"></div>
+			
+			<div class="nav-separator"></div>
+			
+			<li><a href="/site/what-is-wovodata" tabindex="-1"><i class="fas fa-info-circle"></i> About Us</a></li>
+			<li><a href="/forum/categories"><i class="fas fa-comments"></i> FAQ</a></li>
+			<li><a href="/user/policy"><i class="fas fa-database"></i> Data Policy</a></li>
+			<!--
+			<li><a href="#"><i class="fas fa-file-image"></i> Posters at Conference</a></li> -->
+			<div class="footer-left">
+		<li>
+			<p>PHIVOLCS International Award - Volcanic Surveillance & Crisis Management (from IAVCEI)<br>
+			<a href="/cm_image/award/IAVCEI_Certificate_PHIVOLCS_Award_2026.pdf" target="_blank">09 June 2026</a></p>
+			<p>WOVOdat Manual <br>
+			<a href="/cm_image/posters/WOVOdat_UserManual_October2012.pdf" target="_blank">WOVOdat 1.1</a></p>
+			<p>PHIVOLCS-WOVODAT Posters Presented <br>
+			<a href="/cm_image/posters/VDAS_poster_AOGSAug2015_rev_small.pdf" target="_blank">AOGS 2015 NTU, Singapore</a><br>
+			<a href="/cm_image/posters/VDAS_poster_COV82014Sept_final.pdf" target="_blank">COV8 2014 at Yogyakarta, Indonesia</a><br>
+			<a href="/cm_image/posters/VDAS_poster_IAVCEI2013July_Macel_2-rev_final.pdf" target="_blank">IAVCEI 2013 at Kagoshima, Japan</a></p>
+			<!--<p><a href="#" target="_blank">Terms and Conditions</a> <br> <a href="#" target="_blank">Privacy Policy</a></p>-->
+			<p>©PHIVOLCS 2022</p>
+			<div class="footer-social-icons">
+			<a href="https://www.facebook.com/PHIVOLCS"  target="_blank"><i class="fab fa-facebook-f"></i></a>
+			<a href="tel: +632 8426-1468" target="_blank"><i class="fas fa-phone"></i></a>
+			<a href="https://www.google.com/maps/place/DOST-Philippine+Institute+of+Volcanology+and+Seismology/@14.6520415,121.0565061,17z/data=!4m2!3m1!1s0x3397b77066f41f5d:0x5d111abe002ee81" target="_blank"><i class="fas fa-map-marker-alt"></i></a>
+		</div>
+		</li>
+			</div>
+
+		</ul>
+
+
+		</div></div></nav>    </div>
+
+
+	<div class="clear"></div>
+
+    <div class="container">
+        
+        <div id="" class="clear monitoring-data" style="width:100% !important">
+	<div class="container">
+		<div class="banner monitoring-data-banner">
+			<h1 class="htitle">VOLCANO STATUS</h1>
+			<h3>View or download the latest volcano bulletins, advisories, updates & other issuances, or archived issuances.</h3>
+		</div>
+		<div class="monitoring-data-section">
+
+	<form id="frmupdate" name="form" action="/bulletin/list-of-bulletin" method="get" enctype="multipart/form-data">	    <div class="volcano-monitoring-network" style="padding:10px 10px;">
+		<h3 style="text-align:center">Latest volcano bulletins, advisories, updates &amp; other issuances, or archived issuances.</h3>
+		<button id="btn-archive" class="btn btn-primary" type='button'>search for archived issuances</button>
+				<div class="volcano-monitoring-network" >
+		<div class="row">
+   
+  </div>
+		
+						<!--
+			<div class="row">
+			<div class="column" style="background-color:#aaa;">
+				<iframe src="/bulletin/activity-mvo?bid=16936" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+			<div class="column" style="background-color:#bbb;">
+			<iframe src="/bulletin/activity-mvo?bid=16936&lang=en" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+		</div>  -->
+			
+			<div class="col-sm-6 first-column" style="cursor:pointer; padding:5px;">
+				<a href="/bulletin/activity-mvo?bid=16936" target="_blank">
+					<div style="text-align: center;">
+						<iframe src="/bulletin/activity-mvo?bid=16936" class="iframe-thumb" style="" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold;">BULKANG Mayon Buod ng 24 oras na pagmamanman 2026 Oct 25 alas-12 ng umaga </p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (Filipino)</p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+			</div>
+	
+			<div class="col-sm-6 second-column"  style="cursor:pointer; padding:5px; ">
+			
+				<a href="/bulletin/activity-mvo?bid=16936&lang=en" target="_blank">
+					<div style="text-align: center;">
+					<iframe src="/bulletin/activity-mvo?bid=16936&lang=en" class="iframe-thumb" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>	
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold">Mayon Volcano Summary of 24Hr Observation 25 October 2026 12:00 AM</p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (English) </p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+		
+			</div> 
+
+			    <hr>
+						<!--
+			<div class="row">
+			<div class="column" style="background-color:#aaa;">
+				<iframe src="/bulletin/activity-bvo?bid=16935" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+			<div class="column" style="background-color:#bbb;">
+			<iframe src="/bulletin/activity-bvo?bid=16935&lang=en" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+		</div>  -->
+			
+			<div class="col-sm-6 first-column" style="cursor:pointer; padding:5px;">
+				<a href="/bulletin/activity-bvo?bid=16935" target="_blank">
+					<div style="text-align: center;">
+						<iframe src="/bulletin/activity-bvo?bid=16935" class="iframe-thumb" style="" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold;">BULKANG Bulusan Buod ng 24 oras na pagmamanman 2026 Oct 25 alas-12 ng umaga </p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (Filipino)</p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+			</div>
+	
+			<div class="col-sm-6 second-column"  style="cursor:pointer; padding:5px; ">
+			
+				<a href="/bulletin/activity-bvo?bid=16935&lang=en" target="_blank">
+					<div style="text-align: center;">
+					<iframe src="/bulletin/activity-bvo?bid=16935&lang=en" class="iframe-thumb" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>	
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold">Bulusan Volcano Summary of 24Hr Observation 25 October 2026 12:00 AM</p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (English) </p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+		
+			</div> 
+
+			    <hr>
+						<!--
+			<div class="row">
+			<div class="column" style="background-color:#aaa;">
+				<iframe src="/bulletin/activity-kvo?bid=16934" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+			<div class="column" style="background-color:#bbb;">
+			<iframe src="/bulletin/activity-kvo?bid=16934&lang=en" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+		</div>  -->
+			
+			<div class="col-sm-6 first-column" style="cursor:pointer; padding:5px;">
+				<a href="/bulletin/activity-kvo?bid=16934" target="_blank">
+					<div style="text-align: center;">
+						<iframe src="/bulletin/activity-kvo?bid=16934" class="iframe-thumb" style="" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold;">BULKANG Kanlaon Buod ng 24 oras na pagmamanman 2026 Oct 25 alas-12 ng umaga </p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (Filipino)</p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+			</div>
+	
+			<div class="col-sm-6 second-column"  style="cursor:pointer; padding:5px; ">
+			
+				<a href="/bulletin/activity-kvo?bid=16934&lang=en" target="_blank">
+					<div style="text-align: center;">
+					<iframe src="/bulletin/activity-kvo?bid=16934&lang=en" class="iframe-thumb" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>	
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold">Kanlaon Volcano Summary of 24Hr Observation 25 October 2026 12:00 AM</p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (English) </p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+		
+			</div> 
+
+			    <hr>
+						<!--
+			<div class="row">
+			<div class="column" style="background-color:#aaa;">
+				<iframe src="/bulletin/activity-tvo?bid=16933" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+			<div class="column" style="background-color:#bbb;">
+			<iframe src="/bulletin/activity-tvo?bid=16933&lang=en" style="width:500px;height:250px;border:none" scrolling="no" title="Volcano Bulletin"></iframe>
+			</div>
+		</div>  -->
+			
+			<div class="col-sm-6 first-column" style="cursor:pointer; padding:5px;">
+				<a href="/bulletin/activity-tvo?bid=16933" target="_blank">
+					<div style="text-align: center;">
+						<iframe src="/bulletin/activity-tvo?bid=16933" class="iframe-thumb" style="" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold;">BULKANG Taal Buod ng 24 oras na pagmamanman 2026 Oct 25 alas-12 ng umaga </p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (Filipino)</p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+			</div>
+	
+			<div class="col-sm-6 second-column"  style="cursor:pointer; padding:5px; ">
+			
+				<a href="/bulletin/activity-tvo?bid=16933&lang=en" target="_blank">
+					<div style="text-align: center;">
+					<iframe src="/bulletin/activity-tvo?bid=16933&lang=en" class="iframe-thumb" scrolling="no" title="Volcano Bulletin"></iframe>
+					</div>	
+					<div style="clear:both;"></div>
+					<div style="padding:5px;">
+					<p style="font-size:18px;margin:30px 0 0 0;font-weight:bold">Taal Volcano Summary of 24Hr Observation 25 October 2026 12:00 AM</p>
+					<p style="font-size:16px;margin:0px !important;">Bulletin (English) </p>
+					</div>
+					<div style="clear:both;"></div>
+				</a>
+		
+			</div> 
+
+			    <hr>
+					  	<div style="clear:both;"></div>
+		</div>
+
+		<div class="anchor" style="clear:both;padding:10px 0;"></div>
+
+
+			<form id="frmupdate" name="form" action="/bulletin/list-of-bulletin" method="get" enctype="multipart/form-data">	    <div class="volcano-monitoring-network" style="padding:10px 10px;">
+		<h3 style="text-align:center">Archived issuances</h3>
+		
+		<div style="padding: 10px 0">
+					<span class="fl"><select id="vdId" class="form-control" name="vdId" style="width:150px">
+<option value="">Select Volcano</option>
+<option value="571">Bulusan</option>
+<option value="562">Hibok-hibok</option>
+<option value="565">Kanlaon</option>
+<option value="574">Mayon</option>
+<option value="583">Pinatubo</option>
+<option value="580">Taal</option>
+</select></span><span class="fl" style="padding:7px 5px"></span><span class="fl"><select id="vdId" class="form-control" name="type" style="width:150px">
+<option value="">Select type</option>
+<option value="bulletin">bulletin</option>
+<option value="advisory">Advisory</option>
+<option value="update">Update</option>
+<option value="raising">Raising Alert</option>
+<option value="lowering">Lowering Alert</option>
+<option value="press">Press Release</option>
+<option value="statement">Statement</option>
+<option value="information">Information</option>
+<option value="announcement">Announcement</option>
+<option value="paunawa">Paunawa</option>
+<option value="Volcano Activity">Volcano Activity</option>
+</select></span><span class="fl" style="padding:7px 5px">Start Date:</span><span class="fl"><input type="text" id="sdate" class=" form-control" name="sdate" value="" placeholder="YYYY-MM-DD">
+</span><span class="fl" style="padding:7px 5px">End Date:</span><span class="fl" ><input type="text" id="edate" class="form-control" name="edate" value="" placeholder="YYYY-MM-DD">
+</span>		</div>
+		<div class="clear" style="padding: 5px 0"></div>
+		<button id="btn-search" class="btn btn-primary" type='submit'>Search</button>
+		<div style="padding: 10px 0"></div>
+		</form>		</div>
+		</div>
+	</div>	
+</div>
+		
+    </div>
+	
+	<div id="chatbot-popup" class="hidden">
+		<div class="chat-header">
+			<div style="width:70%;float:left;padding:5px"><i class="fas fa-user"></i>Guest</div><div id="close-btn" class="close-btn">&times;</div>		</div>
+		<div id="chat-body" class="chat-body chat-box">
+			<div id="prev-chat"><i>To save your chat history and access features across devices, you'll need to Log in to your account or Signup if no account yet.</i></div>			
+		</div>
+		<div class="chat-footer" style="padding:5px">
+			<p><b>Ano ang iyong sadya?</b></p>
+			
+            <div class="clear"></div>
+			<div class="dropup fl" id="chatbotDropdown">
+			<!-- Hidden input to submit the actual choice to your server -->
+			<input type="hidden" name="form_option_value" id="selected_value" value="">
+			
+			<!-- The trigger button acting as the select field visual -->
+			<button class="btn btn-default dropdown-toggle form-control text-left" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+				<span class="dropdown-label">Pumili</span>
+			</button>
+			
+			<!-- The dropdown list containing the options -->
+			<ul class="dropdown-menu" style="width: 100%;">
+				<li><a href="#" data-value="28">Kumusta ang Bulkan?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="21">Ano ang kaibahan ng phreatic at phreatomagmatic na pagputok?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="24">Anu-ano ang mga panganib sa bulkan?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="27">Anu-anong mga Volcano Observatories meron ang DOST-PHIVOLCS?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="18">Delikado po ba ang súlfur dioxide na galing as bulkan?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="25">Kasaysayan ng pagsabog?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="19">Paano nakakaapekto ang súlfur dioxide gas sa kalusugan?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="23">Paano po nagkaroon ng PDC sa Mayon during effusive eruption?</a></li><li role="separator" class="divider"></li><li><a href="#" data-value="20">Pwede po bang magkaroon ng pagsabog kahit walang abnormalidad sa mga parametrong minomonitor?</a></li><li role="separator" class="divider"></li>				
+			</ul>
+			</div>
+			<!--<input type="text" class="chat-input" id="user-input" placeholder="Other concern here!">-->
+			<button id="send-btn" >Send</button>
+			<button class="form-control" id="clive">Live Chat (Coming soon)</button>
+		</div>
+	</div>
+	<button id="chatbot-toggler">We're online - "Kumusta ang Bulkan?"</button>
+
+
+<footer class="footer">
+    <div class="container">
+       <p style="text-align:center;color:#2ba6cb">&copy; Philippine Institute of Volcanology and Seismology 2026</p>
+    </div>
+</footer>
+
+<script src="/assets/d6ef0bc1/jquery.js"></script>
+<script src="/assets/ae32bd51/yii.js"></script>
+<script src="/js/notify.min.js"></script>
+<script src="/assets/bbdc27ed/js/bootstrap.js"></script>
+<script src="/js/helper.js"></script>
+<script src="/js/bootstrap-confirmation.min.js"></script>
+<script src="/assets/520d4473/jquery-ui.js"></script>
+<script type="text/javascript">jQuery(document).ready(function () {
+
+ var searchParams = new URLSearchParams(window.location.search);
+ console.log(searchParams);
+ if(searchParams.has('vdId'))
+	 $('html, body').scrollTop($('.anchor').offset().top);
+ $('#btn-archive').click(function(){
+	$('html, body').scrollTop($('.anchor').offset().top);
+ });
+
+jQuery('#sdate').datepicker({"dateFormat":"yy-mm-dd"});
+jQuery('#edate').datepicker({"dateFormat":"yy-mm-dd"});
+
+	var isprev = false;
+	const toggler = document.getElementById('chatbot-toggler');
+	const popup = document.getElementById('chatbot-popup');
+	const closeBtn = document.getElementById('close-btn');
+	const sendBtn = document.getElementById('send-btn');
+	//const input = document.getElementById('user-input');
+	const chatBody = document.getElementById('chat-body');
+	const prevChat = document.getElementById('prev-chat');
+	const liveBtn = document.getElementById('clive');
+	const seleccBtn = document.getElementById('claims');
+
+	$('.dropup .dropdown-menu').on('click', 'li', function() {
+   		$(this).siblings().removeClass('active');
+    	$(this).addClass('active');
+	});
+	
+	// Toggle Chatbot Visibility
+	[toggler, closeBtn].forEach(btn => {
+		btn.addEventListener('click', function(){
+		
+			if('1' != '1' && isprev != true)
+				getPrevMessage();
+			else{
+				//getClaims();
+			}
+			
+			popup.classList.toggle('hidden')
+		});
+	});
+
+	function getClaims(){
+		$.ajax({
+			url: '/chatbot/list-claims-question', 
+			type: 'POST',
+			success: function(response) {   
+				var d = $.parseJSON(response);
+				//$('#claims option:not(:first)').remove();
+				
+				$.each(d.ques, function(key, val) {
+					//$('.dropup  .dropdown-menu').append('<option value="'+d.id[key]+'">'+val+'</option>');
+					//$('.dropup  .dropdown-menu').append('<li><a href="#" data-value="'+d.id[key]+'">'+val+'</a></li>');
+					//
+					
+					//$('.dropup  .dropdown-menu').append('<li role="separator" class="divider"></li>');
+				});
+			},
+			error: function(xhr, status, error) {}
+		});
+	}
+	
+	function getPrevMessage(){
+		$.ajax({
+			url: '/chatbot/get-prev-message', 
+			type: 'POST',
+			success: function(response) {   
+				var d = $.parseJSON(response);
+				var istre = false;
+				$.each(d.ques, function(key, val) {
+					prevMessage(d.resp[key], 'bot');
+					prevMessage(val, 'user');
+					istre = true;
+				});
+				//$('#prev-chat').remove();
+				isprev = true;
+				//const div = document.createElement('div');
+				//div.classList.add('premsg');
+				//div.innerHTML = 'previous chat'; 
+				//if(istre == true)
+					//chatBody.appendChild(div);
+				//getClaims();
+			},
+			error: function(xhr, status, error) {}
+		});
+	}
+    
+	function getAnswer(id){
+		var str =$('#chatbotDropdown .dropdown-label').text(); //$('#claims option:selected').text();
+		appendMessage(str, 'user');
+		appendMessage('...', 'wait');
+		$.ajax({
+			url: '/chatbot/claims-response', 
+			type: 'POST',                         
+			data: {id:id},			
+			success: function(response) {   
+				var d = $.parseJSON(response);
+				$('.wait').remove();
+				appendMessage(d.response, 'bot');
+				//setTimeout(() => appendMessage(d.response, 'bot'), 600);
+			},
+			error: function(xhr, status, error) {}
+		});
+	}
+
+	// Append Message Function
+	function appendMessage(text, sender) {
+		const div = document.createElement('div');
+		div.classList.add('message', sender);
+		//div.textContent = text;
+		div.innerHTML = text; 
+		chatBody.appendChild(div);
+		chatBody.scrollTop = chatBody.scrollHeight; // Auto-scroll
+	}
+
+	// Append Message Function
+	function prevMessage(text, sender) {
+		const div = document.createElement('div');
+		if('1' != '1'){
+			const div = document.createElement('div');
+			div.classList.add('message', sender);
+			div.innerHTML = text; 
+			chatBody.prepend(div);
+			chatBody.scrollTop = chatBody.scrollHeight; // Auto-scroll
+		}
+		
+	}
+		
+	clive.addEventListener('click', () => {
+		const div = document.createElement('div');
+		div.classList.add('message', 'bot');
+		/*
+		if('1' != '1')
+			div.innerHTML = 'connecting...'; 
+		else
+			div.innerHTML = 'Please Sign-In';  */
+		div.innerHTML = 'We are building this part right now.'; 
+		chatBody.appendChild(div);
+		chatBody.scrollTop = chatBody.scrollHeight; // Auto-scroll
+
+	});
+
+	
+	// Handle Send Event
+	sendBtn.addEventListener('click', () => {
+		const str = $('#chatbotDropdown #selected_value').val();
+		if (str != '') {
+			getAnswer(str);
+		}
+	});
+
+	// Send on Enter Key
+	//input.addEventListener('keypress', (e) => {
+		//if (e.key === 'Enter') sendBtn.click();
+	//});
+
+	$('#chatbotDropdown .dropdown-menu a').click(function(e) {
+		e.preventDefault(); // Stop page jumping
+		
+		var selectedText = $(this).text();
+		var selectedValue = $(this).data('value');
+		
+		// Update the button text visible to the user
+		$('#chatbotDropdown .dropdown-label').text(selectedText);
+		
+		// Update the hidden input field value for form processing
+		$('#chatbotDropdown #selected_value').val(selectedValue);
+	});
+
+
+});</script></body>
+</html>
