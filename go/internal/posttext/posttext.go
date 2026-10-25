@@ -68,6 +68,13 @@ type DailyData struct {
 	Sample        bool
 }
 
+// RainLines returns trilingual rain lines for one probability (the max
+// hourly probability over the displayed window). Thresholds are shared
+// with the card (REVIEW_C #3): <20% low, 20–49% some chance, >=50% likely.
+// Exported so the site summary reuses the exact same wording as the card
+// and post text.
+func RainLines(p int) (tl, en, ja string) { return rainLines(p) }
+
 // rainLines returns trilingual rain lines for one probability (the max
 // hourly probability over the displayed 06:00–23:00 window). Thresholds
 // are shared with the card (REVIEW_C #3): <20% low, 20–49% some chance,

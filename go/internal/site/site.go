@@ -16,7 +16,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tomohiro-owada/sakuna-bantay/go/internal/card"
+	"github.com/tomohiro-owada/sakuna-bantay/go/internal/pagasa"
+	"github.com/tomohiro-owada/sakuna-bantay/go/internal/posttext"
 	"github.com/tomohiro-owada/sakuna-bantay/go/internal/snapshot"
+	"github.com/tomohiro-owada/sakuna-bantay/go/internal/volcano"
 )
 
 // Options controls Generate.
@@ -85,7 +89,11 @@ footer{padding:16px;font-size:12px;color:var(--muted);text-align:center}
 func esc(s string) string { return html.EscapeString(s) }
 
 func header(logo, title, sub string) string {
-	return `<header><img class="logo" src="sakuna-bantay-logo.svg" alt="Sakuna Bantay logo">` +
+	// Header uses the mark only (favicon/favicon.svg): the full lockup
+	// sakuna-bantay-logo.svg carries navy wordmark text that is invisible
+	// on the navy header and would duplicate the text title next to it.
+	mark := "favicon/favicon.svg"
+	return `<header><img class="logo" src="` + esc(mark) + `" alt="Sakuna Bantay mark">` +
 		`<div><div class="t">` + esc(title) + `</div><div class="sub">` + esc(sub) + `</div></div></header>` +
 		`<nav><a href="index.html">Today · Ngayon · 今日</a>` +
 		`<a href="alerts.html">Alerts · Alerto · 警報</a>` +
@@ -400,6 +408,96 @@ func buildInto(o Options) error {
 	return nil
 }
 
+func phtStr(t time.Time, loc *time.Location) string {
+	if t.IsZero() {
+		return "—"
+	}
+	if loc != nil {
+		t = t.In(loc)
+	}
+	return t.Format("2 Jan 2006, 3:04 PM PHT")
+}
+
+// siteNow is the reference time for window/active filtering: the snapshot
+// fetch time (GeneratedAt), falling back to now.
+func siteNow(snap *snapshot.Snapshot) time.Time {
+	if snap != nil && !snap.GeneratedAt.IsZero() {
+		return snap.GeneratedAt
+	}
+	return time.Now()
+}
+
+// activeAlertsForSite returns the ACTIVE-only, de-duplicated alerts for
+// rendering: expired and superseded items are dropped (via
+// pagasa.ActiveSet at the snapshot time), and repeated identifiers (as in
+// fixture builds mapping many feed entries to one CAP) collapse to one.
+func activeAlertsForSite(snap *snapshot.Snapshot) []*pagasa.Alert {
+	if snap == nil {
+		return nil
+	}
+	now := siteNow(snap)
+	filtered := pagasa.ActiveSet(snap.Pagasa.Active, now)
+	seen := map[string]bool{}
+	var out []*pagasa.Alert
+	for _, a := range filtered {
+		if a == nil {
+			continue
+		}
+		if seen[a.Identifier] {
+			continue
+		}
+		seen[a.Identifier] = true
+		out = append(out, a)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Sent.After(out[j].Sent) })
+	return out
+}
+
+// alertAreasText joins areaDesc values, truncated to at most maxAreas with
+// a (+N more) suffix; empty areas render as "—".
+func alertAreasText(a *pagasa.Alert, maxAreas int) string {
+	if a == nil || len(a.Areas) == 0 {
+		return "—"
+	}
+	var descs []string
+	for _, ar := range a.Areas {
+		if ar.Desc == "" {
+			continue
+		}
+		descs = append(descs, ar.Desc)
+	}
+	if len(descs) == 0 {
+		return "—"
+	}
+	if maxAreas > 0 && len(descs) > maxAreas {
+		extra := len(descs) - maxAreas
+		return strings.Join(descs[:maxAreas], "; ") + fmt.Sprintf(" (+%d more)", extra)
+	}
+	return strings.Join(descs, "; ")
+}
+
+// capLink returns the CAP URL for an alert (SourceURL, falling back to Web).
+func capLink(a *pagasa.Alert) string {
+	if a == nil {
+		return ""
+	}
+	if a.SourceURL != "" {
+		return a.SourceURL
+	}
+	return a.Web
+}
+
+// taalLevelForSite returns the Taal level + canonical description, derived
+// from snapshot.taal.level via volcano.LevelDescription (not the stored
+// LevelText, which may be stale).
+func taalLevelForSite(snap *snapshot.Snapshot) (int, string, bool) {
+	if snap == nil || snap.Taal == nil {
+		return 0, "", false
+	}
+	lvl := snap.Taal.Taal.Level
+	return lvl, volcano.LevelDescription(lvl), true
+}
+
 func todayHTML(snap *snapshot.Snapshot, pngs []string, loc *time.Location) string {
 	var b strings.Builder
 	// daily card image (stable name today.png)
@@ -415,33 +513,60 @@ func todayHTML(snap *snapshot.Snapshot, pngs []string, loc *time.Location) strin
 	}
 	if snap.Today != nil {
 		t := snap.Today
-		fmt.Fprintf(&b, `<div class="card"><h2>Las Piñas — %s</h2>
-<p><span class="lang">Taglish:</span> Init hanggang %.0f°C, feels like %.0f°C. Mababa ang tsansa ng ulan (max %d%%).</p>
-<p><span class="lang">EN:</span> Up to %.0f°C, feels like %.0f°C. Rain max %d%%. UV %s, AQI %d (%s).</p>
-<p><span class="lang">JP:</span> 最高%.0f°C、体感%.0f°C。雨の可能性 最大%d%%。UV %s、AQI %d。</p>
-<p>Taal Alert Level %d · %s %s</p></div>`+"\n",
-			esc(t.Date), t.TMax, t.ApparentMax, t.PrecipProbMx,
-			t.TMax, t.ApparentMax, t.PrecipProbMx, esc(t.UVCategory), t.AQI, esc(t.AQICategory),
-			t.TMax, t.ApparentMax, t.PrecipProbMx, esc(t.UVCategory), t.AQI,
-			snap.Pagasa.NCRMax, esc(levelText(snap)), esc(snap.Pagasa.WatchSummary))
-	}
-	if len(snap.Pagasa.Active) > 0 {
-		b.WriteString(`<div class="card"><h2>Active alerts</h2><ul>`)
-		for _, a := range snap.Pagasa.Active {
-			fmt.Fprintf(&b, "<li>%s — %s</li>", esc(a.Headline), esc(a.Identifier))
+		// SAME values as the card/posttext inputs: rain is the max over
+		// the displayed window (card.DailyDisplay with the snapshot time),
+		// wording uses the shared <20/20–49/>=50 thresholds
+		// (posttext.RainLines); AQI is the daily max labelled as a model
+		// estimate; Taal level comes from snapshot.taal.level with
+		// volcano.LevelDescription.
+		_, _, windowMax := card.DailyDisplay(*t, siteNow(snap))
+		rainTL, rainEN, rainJA := posttext.RainLines(windowMax)
+		uv := t.UVCategory
+		if uv == "" {
+			uv = "—"
 		}
-		b.WriteString(`</ul></div>`)
+		aqiCat := t.AQICategory
+		if aqiCat == "" {
+			aqiCat = "—"
+		}
+		fmt.Fprintf(&b, `<div class="card"><h2>Las Piñas — %s</h2>
+<p><span class="lang">Taglish:</span> Init hanggang %.0f°C, feels like %.0f°C. %s</p>
+<p><span class="lang">EN:</span> Up to %.0f°C, feels like %.0f°C. %s UV %s (%.1f). AQI (US, max) %d (%s · model estimate).</p>
+<p><span class="lang">JP:</span> 最高%.0f°C、体感%.0f°C。%s UV %s、AQI（最大）%d。</p>`+"\n",
+			esc(t.Date), t.TMax, t.ApparentMax, esc(rainTL),
+			t.TMax, t.ApparentMax, esc(rainEN), esc(uv), t.UVMax, t.AQIMax, esc(aqiCat),
+			t.TMax, t.ApparentMax, esc(rainJA), esc(uv), t.AQIMax)
+		if lvl, desc, ok := taalLevelForSite(snap); ok {
+			fmt.Fprintf(&b, "<p>Taal Alert Level %d · %s</p>\n<p>%s</p></div>\n",
+				lvl, esc(desc), esc(snap.Pagasa.WatchSummary))
+		} else {
+			fmt.Fprintf(&b, "<p>Taal status unavailable.</p>\n<p>%s</p></div>\n",
+				esc(snap.Pagasa.WatchSummary))
+		}
+	}
+	alerts := activeAlertsForSite(snap)
+	if len(alerts) > 0 {
+		b.WriteString(`<div class="card"><h2>Active alerts</h2><ul>`)
+		for _, a := range alerts {
+			title := a.Headline
+			if title == "" {
+				title = a.Event
+			}
+			if title == "" {
+				title = "Weather alert"
+			}
+			link := capLink(a)
+			if link != "" {
+				fmt.Fprintf(&b, `<li><a href="%s">%s</a> — %s</li>`, esc(link), esc(title), esc(a.Event))
+			} else {
+				fmt.Fprintf(&b, "<li>%s — %s</li>", esc(title), esc(a.Event))
+			}
+		}
+		b.WriteString(`</ul><p><a href="alerts.html">All alerts · Lahat ng alerto · 警報一覧</a></p></div>`)
 	} else {
-		b.WriteString(`<div class="card"><p>No active PAGASA warnings for NCR area.</p></div>`)
+		b.WriteString(`<div class="card"><p>Walang aktibong babala ng PAGASA para sa NCR area.<br>No active PAGASA warnings for NCR area.<br>NCR周辺にPAGASAの有効な警報はありません。</p></div>`)
 	}
 	return b.String()
-}
-
-func levelText(snap *snapshot.Snapshot) string {
-	if snap.Taal != nil {
-		return snap.Taal.Taal.LevelText
-	}
-	return ""
 }
 
 func alertsHTML(snap *snapshot.Snapshot, loc *time.Location) string {
@@ -464,27 +589,79 @@ func alertsHTML(snap *snapshot.Snapshot, loc *time.Location) string {
 		}
 		b.WriteString(`</table></div>`)
 	}
-	if len(snap.Pagasa.Active) == 0 {
-		b.WriteString(`<div class="card"><p>No active alerts.</p></div>`)
-	}
-	for _, a := range snap.Pagasa.Active {
-		watch := "outside watch area"
+	alerts := activeAlertsForSite(snap)
+	var watch, other []*pagasa.Alert
+	for _, a := range alerts {
 		if a.InWatchArea() {
-			watch = "in watch area"
+			watch = append(watch, a)
+		} else {
+			other = append(other, a)
 		}
-		var areas []string
-		for _, ar := range a.Areas {
-			areas = append(areas, ar.Desc)
+	}
+	if len(alerts) == 0 {
+		b.WriteString(`<div class="card"><p>No active alerts.</p></div>`)
+		return b.String()
+	}
+	b.WriteString(`<div class="card"><h2>Para sa NCR area / For the NCR area</h2>`)
+	if len(watch) == 0 {
+		b.WriteString(`<p>Walang aktibong babala ng PAGASA para sa NCR area.<br>No active PAGASA warnings for NCR area.<br>NCR周辺にPAGASAの有効な警報はありません。</p></div>`)
+	} else {
+		b.WriteString(`</div>`)
+		for _, a := range watch {
+			b.WriteString(alertCardHTML(a, loc, true))
 		}
-		fmt.Fprintf(&b, `<div class="card"><h3>%s</h3>
-<p>Event: %s · Signal #%d · Rain %s · %s</p>
-<p>Sent %s · Expires %s</p>
-<p>Areas: %s</p></div>`+"\n",
-			esc(a.Headline), esc(a.Event), a.Signal(), esc(a.RainfallColor()), esc(watch),
-			esc(a.Sent.Format("2 Jan 2006, 3:04 PM PHT")), esc(a.Expires.Format("2 Jan 2006, 3:04 PM PHT")),
-			esc(strings.Join(areas, "; ")))
+	}
+	if len(other) > 0 {
+		b.WriteString(`<div class="card"><h2>Iba pang lugar / Elsewhere in PH</h2></div>`)
+		for _, a := range other {
+			b.WriteString(alertCardHTML(a, loc, false))
+		}
 	}
 	return b.String()
+}
+
+// alertCardHTML renders one ACTIVE alert with headline/event, areas,
+// severity, issued/expires PHT and a CAP link.
+func alertCardHTML(a *pagasa.Alert, loc *time.Location, inWatch bool) string {
+	title := a.Headline
+	if title == "" {
+		title = a.Event
+	}
+	if title == "" {
+		title = "Weather alert"
+	}
+	event := a.Event
+	if event == "" {
+		event = "—"
+	}
+	sev := a.Severity
+	if sev == "" {
+		sev = "—"
+	}
+	watch := "outside watch area"
+	if inWatch {
+		watch = "in watch area"
+	}
+	detail := fmt.Sprintf("Event: %s · Severity: %s", event, sev)
+	if sig := a.Signal(); sig > 0 {
+		detail += fmt.Sprintf(" · Signal #%d", sig)
+	}
+	if rain := a.RainfallColor(); rain != "" {
+		detail += fmt.Sprintf(" · Rain %s", rain)
+	}
+	detail += " · " + watch
+	var link string
+	if u := capLink(a); u != "" {
+		link = fmt.Sprintf(`<p><a href="%s">CAP source · CAP pinagmulan · CAPソース</a></p>`, esc(u))
+	}
+	return fmt.Sprintf(`<div class="card"><h3>%s</h3>
+<p>%s</p>
+<p>Issued %s · Expires %s</p>
+<p>Areas: %s</p>
+%s</div>`+"\n",
+		esc(title), esc(detail),
+		esc(phtStr(a.Sent, loc)), esc(phtStr(a.Expires, loc)),
+		esc(alertAreasText(a, 8)), link)
 }
 
 func quakesHTML(snap *snapshot.Snapshot) string {
