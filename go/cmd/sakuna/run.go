@@ -84,7 +84,7 @@ func cmdRun(argv []string) int {
 	nowS := fs.String("now", "", "reference time RFC3339 (default: now)")
 	siteOut := fs.String("site-out", "", "site output directory (empty = skip site rebuild)")
 	base := fs.String("base", "/sakuna-bantay/", "site base path")
-	brand := fs.String("brand", "../brand", "brand directory")
+	brand := fs.String("brand", "", "brand directory (empty = embedded assets)")
 	if err := fs.Parse(argv); err != nil {
 		return 2
 	}

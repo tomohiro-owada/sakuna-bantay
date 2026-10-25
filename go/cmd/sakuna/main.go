@@ -880,7 +880,7 @@ func cmdSite(argv []string) int {
 	cards := fs.String("cards", "../samples", "cards directory (PNGs)")
 	out := fs.String("out", "../out/site", "output site directory")
 	base := fs.String("base", "/sakuna-bantay/", "site base path")
-	brand := fs.String("brand", "../brand", "brand directory")
+	brand := fs.String("brand", "", "brand directory (empty = embedded assets)")
 	if err := fs.Parse(argv); err != nil {
 		return 2
 	}
@@ -914,7 +914,7 @@ func cmdAll(argv []string) int {
 	stateDir := fs.String("state", "", "state directory")
 	nowS := fs.String("now", "", "reference time RFC3339 (default: now)")
 	base := fs.String("base", "/sakuna-bantay/", "site base path")
-	brand := fs.String("brand", "../brand", "brand directory")
+	brand := fs.String("brand", "", "brand directory (empty = embedded assets)")
 	if err := fs.Parse(argv); err != nil {
 		return 2
 	}

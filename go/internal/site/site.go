@@ -153,7 +153,139 @@ func page(title, sub, body, foot, gaid, canonical, ogURL, ogImage, ogDesc string
 }
 
 // Generate builds the static site.
+//
+// The site is built into a temp dir next to OutDir and then atomically
+// swapped into place (rename), so OutDir contains only files from the
+// current build — stale files from older builds never survive.
 func Generate(o Options) error {
+	if o.OutDir == "" {
+		return fmt.Errorf("site: empty out dir")
+	}
+	clean := filepath.Clean(o.OutDir)
+	parent := filepath.Dir(clean)
+	if parent != "" && parent != "." {
+		if err := os.MkdirAll(parent, 0o755); err != nil {
+			return err
+		}
+	} else {
+		parent = "."
+		if clean == "." {
+			return fmt.Errorf("site: empty out dir")
+		}
+	}
+	tmp, err := os.MkdirTemp(parent, ".site-tmp-*")
+	if err != nil {
+		return err
+	}
+	failed := true
+	defer func() {
+		if failed {
+			_ = os.RemoveAll(tmp)
+		}
+	}()
+	oc := o
+	oc.OutDir = tmp
+	if err := buildInto(oc); err != nil {
+		return err
+	}
+	// Atomic swap: tmp -> clean. os.Rename cannot replace a non-empty
+	// dir, so move the old dir aside first when it exists.
+	if _, err := os.Lstat(clean); os.IsNotExist(err) {
+		if err := os.Rename(tmp, clean); err != nil {
+			return err
+		}
+	} else {
+		backup := fmt.Sprintf("%s.backup-%d", clean, time.Now().UnixNano())
+		for i := 0; i < 10; i++ {
+			if _, err := os.Lstat(backup); os.IsNotExist(err) {
+				break
+			}
+			backup = fmt.Sprintf("%s.backup-%d-%d", clean, time.Now().UnixNano(), i)
+		}
+		if err := os.Rename(clean, backup); err != nil {
+			return err
+		}
+		if err := os.Rename(tmp, clean); err != nil {
+			// Best-effort restore.
+			_ = os.Rename(backup, clean)
+			return err
+		}
+		_ = os.RemoveAll(backup)
+	}
+	failed = false
+	return nil
+}
+
+// writeBrandAssets copies the brand logo + favicons into dst. BrandDir is
+// tried first; any missing piece falls back to the embedded copies so a
+// server without a brand/ directory still ships logo + favicons.
+func writeBrandAssets(dst, brandDir string) error {
+	logoWritten := false
+	favWritten := false
+	if brandDir != "" {
+		if data, err := os.ReadFile(filepath.Join(brandDir, "sakuna-bantay-logo.svg")); err == nil {
+			if err := os.WriteFile(filepath.Join(dst, "sakuna-bantay-logo.svg"), data, 0o644); err != nil {
+				return err
+			}
+			logoWritten = true
+		}
+		favSrc := filepath.Join(brandDir, "favicon")
+		favDst := filepath.Join(dst, "favicon")
+		if st, err := os.Stat(favSrc); err == nil && st.IsDir() {
+			if ents, err := os.ReadDir(favSrc); err == nil {
+				n := 0
+				for _, e := range ents {
+					if e.IsDir() {
+						continue
+					}
+					b, err := os.ReadFile(filepath.Join(favSrc, e.Name()))
+					if err != nil {
+						continue
+					}
+					if n == 0 {
+						if err := os.MkdirAll(favDst, 0o755); err != nil {
+							return err
+						}
+					}
+					if err := os.WriteFile(filepath.Join(favDst, e.Name()), b, 0o644); err != nil {
+						return err
+					}
+					n++
+				}
+				if n > 0 {
+					favWritten = true
+				}
+			}
+		}
+	}
+	if !logoWritten {
+		data, err := embeddedLogo()
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(dst, "sakuna-bantay-logo.svg"), data, 0o644); err != nil {
+			return err
+		}
+	}
+	if !favWritten {
+		favs, err := embeddedFavicons()
+		if err != nil {
+			return err
+		}
+		favDst := filepath.Join(dst, "favicon")
+		if err := os.MkdirAll(favDst, 0o755); err != nil {
+			return err
+		}
+		for name, b := range favs {
+			if err := os.WriteFile(filepath.Join(favDst, name), b, 0o644); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func buildInto(o Options) error {
 	bp := base(o.BasePath)
 	if err := os.MkdirAll(o.OutDir, 0o755); err != nil {
 		return err
@@ -162,26 +294,9 @@ func Generate(o Options) error {
 	if err := os.WriteFile(filepath.Join(o.OutDir, "style.css"), []byte(css), 0o644); err != nil {
 		return err
 	}
-	// brand logo
-	if o.BrandDir != "" {
-		if data, err := os.ReadFile(filepath.Join(o.BrandDir, "sakuna-bantay-logo.svg")); err == nil {
-			_ = os.WriteFile(filepath.Join(o.OutDir, "sakuna-bantay-logo.svg"), data, 0o644)
-		}
-		// favicons
-		favSrc := filepath.Join(o.BrandDir, "favicon")
-		favDst := filepath.Join(o.OutDir, "favicon")
-		if st, err := os.Stat(favSrc); err == nil && st.IsDir() {
-			_ = os.MkdirAll(favDst, 0o755)
-			ents, _ := os.ReadDir(favSrc)
-			for _, e := range ents {
-				if e.IsDir() {
-					continue
-				}
-				if b, err := os.ReadFile(filepath.Join(favSrc, e.Name())); err == nil {
-					_ = os.WriteFile(filepath.Join(favDst, e.Name()), b, 0o644)
-				}
-			}
-		}
+	// brand logo + favicons (disk first, embedded fallback).
+	if err := writeBrandAssets(o.OutDir, o.BrandDir); err != nil {
+		return err
 	}
 	// Card PNGs: copy ONLY the images actually referenced by pages, under
 	// stable names so links don't churn. Synthetic SAMPLE cards (any

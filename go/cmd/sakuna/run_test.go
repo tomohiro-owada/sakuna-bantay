@@ -693,3 +693,87 @@ func TestRunAlertDirtyOnWatchSetChange(t *testing.T) {
 		t.Error("expanded set should count as a change")
 	}
 }
+
+// TestRunSiteOutputEmbeddedAtomic: run's site output (with NO brand dir,
+// i.e. server layout) ships embedded logo+favicons, stable cards, GA + privacy,
+// and contains no stale files from a previous build; no *-synth* cards leak.
+func TestRunSiteOutputEmbeddedAtomic(t *testing.T) {
+	h := newHarness(t)
+	writeFbEnv(t, h.fbEnv)
+	seedDryState(t, h.state)
+	siteOut := filepath.Join(h.home, "site")
+	if err := os.MkdirAll(siteOut, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Stale files from an older build must disappear after the pass.
+	for _, n := range []string{"daily-20200101.png", "signal-synth.png", "quake-synth-near.png", "stale.txt"} {
+		if err := os.WriteFile(filepath.Join(siteOut, n), []byte("stale"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	o := h.opts(fixtureNow())
+	o.Live = false
+	o.BrandDir = "" // server has no brand/ directory: embedded fallback.
+	o.SiteOutDir = siteOut
+	if code := runOnce(o); code != 0 {
+		t.Fatalf("exit %d, stderr:\n%s", code, h.stderr.String())
+	}
+	if !strings.Contains(h.stdout.String(), "site=rebuilt") {
+		t.Errorf("expected site=rebuilt, got:\n%s", h.stdout.String())
+	}
+	for _, n := range []string{
+		"sakuna-bantay-logo.svg",
+		"favicon/favicon.svg", "favicon/favicon-32.png", "favicon/apple-touch-icon-180.png",
+		"today.png", "taal.png",
+	} {
+		if _, err := os.Stat(filepath.Join(siteOut, n)); err != nil {
+			t.Errorf("run site missing %s: %v", n, err)
+		}
+	}
+	ents, err := os.ReadDir(siteOut)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range ents {
+		lower := strings.ToLower(e.Name())
+		if strings.Contains(lower, "synth") {
+			t.Errorf("run site must never copy *-synth* cards: %s", e.Name())
+		}
+		if strings.HasPrefix(lower, "daily-") {
+			t.Errorf("run site must not keep dated daily files: %s", e.Name())
+		}
+	}
+	for _, n := range []string{"daily-20200101.png", "signal-synth.png", "quake-synth-near.png", "stale.txt"} {
+		if _, err := os.Stat(filepath.Join(siteOut, n)); !os.IsNotExist(err) {
+			t.Errorf("stale file %s survived run site rebuild", n)
+		}
+	}
+	// Favicon dir must not contain synth leftovers either.
+	if fents, err := os.ReadDir(filepath.Join(siteOut, "favicon")); err != nil {
+		t.Errorf("favicon dir missing: %v", err)
+	} else {
+		for _, e := range fents {
+			if strings.Contains(strings.ToLower(e.Name()), "synth") {
+				t.Errorf("favicon must not contain synth: %s", e.Name())
+			}
+		}
+	}
+	for _, p := range []string{"index.html", "alerts.html", "quakes.html", "taal.html", "sources.html"} {
+		b, err := os.ReadFile(filepath.Join(siteOut, p))
+		if err != nil {
+			t.Errorf("missing %s: %v", p, err)
+			continue
+		}
+		s := string(b)
+		for _, want := range []string{
+			`<script async src="https://www.googletagmanager.com/gtag/js?id=G-VL047YCMK8"></script>`,
+			`gtag('config','G-VL047YCMK8')`,
+			"Gumagamit ang site na ito ng Google Analytics para sa bilang ng bisita.",
+			"This site uses Google Analytics to count visits.",
+		} {
+			if !strings.Contains(s, want) {
+				t.Errorf("%s missing %q", p, want)
+			}
+		}
+	}
+}
