@@ -1,0 +1,38 @@
+name: Pages
+
+# The published site lives on the orphan `site` branch (single force-pushed
+# commit with site/** + this workflow). Kept on main too, identical.
+on:
+  push:
+    branches: [site]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout site branch
+        uses: actions/checkout@v4
+        with:
+          ref: site
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site folder as-is
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
