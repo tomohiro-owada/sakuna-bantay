@@ -2,6 +2,9 @@ name: Pages
 
 # The published site lives on the orphan `site` branch (single force-pushed
 # commit with site/** + this workflow). Kept on main too, identical.
+# ops/deploy.sh copies this file to $SAKUNA_ROOT/bin/pages.yml, and
+# site-publish.sh force-pushes that copy onto `site`. Edit this file;
+# a hand edit on `site` is replaced on the next publish.
 on:
   push:
     branches: [site]
@@ -21,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry_1.outputs.page_url || steps.deployment_retry_2.outputs.page_url }}
     steps:
       - name: Checkout site branch
         uses: actions/checkout@v4
@@ -33,6 +36,30 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
+      # The Actions results list is eventually consistent. deploy-pages
+      # looks up "github-pages" once and fails the run when that list is
+      # still empty (observed a few hundred milliseconds after a
+      # successful upload). Wait, then retry only this step. Uploading
+      # again in the same run creates a second artifact of that name,
+      # and the next lookup then fails for good.
+      - name: Wait for Pages artifact
+        run: sleep 5
       - name: Deploy to Pages
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Wait before Pages deploy retry 1
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 15
+      - name: Deploy to Pages (retry 1)
+        id: deployment_retry_1
+        if: steps.deployment.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Wait before Pages deploy retry 2
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry_1.outcome == 'failure'
+        run: sleep 30
+      - name: Deploy to Pages (retry 2)
+        id: deployment_retry_2
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry_1.outcome == 'failure'
         uses: actions/deploy-pages@v4

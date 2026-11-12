@@ -42,7 +42,12 @@ publishes):
 `.github/workflows/pages.yml` is kept on `main` too, identical: on push to
 `site` (+ `workflow_dispatch`) it checks out the `site` branch
 (`actions/checkout@v4` with `ref: site`), `configure-pages@v5`,
-`upload-pages-artifact@v3` with `path: site`, `deploy-pages@v4`.
+`upload-pages-artifact@v3` with `path: site`, waits a few seconds, then
+`deploy-pages@v4`. That deploy step is retried on its own when the
+artifact list is briefly empty. The upload step is not retried: a second
+`github-pages` artifact in the same run makes the lookup fail for good.
+Edit the copy on `main`. `site-publish.sh` replaces the `site` copy from
+`bin/pages.yml` on every push, so a hand edit on `site` does not last.
 
 `site-publish.sh` (disabled unless `site-publish.enabled` exists) builds the
 orphan commit in a scratch tree `$SAKUNA_ROOT/state/publish-tmp` (deleted &
